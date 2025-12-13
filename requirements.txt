@@ -1,0 +1,19 @@
+# FastAPI Starter Requirements
+# Install with: pip install -r requirements.txt
+
+# Core FastAPI
+fastapi==0.109.0
+
+# ASGI server to run FastAPI
+uvicorn[standard]==0.27.0
+
+# Data validation (comes with FastAPI but listed for clarity)
+pydantic==2.7.0
+
+# For later stages (commented out for now):
+# pandas==2.1.4
+# numpy==1.26.3
+# scikit-learn==1.4.0
+# redis==5.0.1
+# pyyaml==6.0.1
+# httpx==0.26.0
