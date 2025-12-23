@@ -1,195 +1,78 @@
-# Solar Power Generation Predictor API
+# 太陽能發電量預測器
 
-FastAPI-based REST API for predicting solar power generation using machine learning models.
+歡迎來到太陽能發電量預測器專案！此儲存庫包含一個可用於生產環境的 FastAPI 應用程式，旨在使用機器學習預測太陽能發電量。
 
-## 🏗️ Project Structure
+## 🚀 專案概覽
 
-```
-repo/
-├── app/                      # Main application package
-│   ├── api/                  # API endpoints
-│   │   └── v1/              # API version 1
-│   │       ├── prediction.py  # Prediction endpoints
-│   │       └── __init__.py
-│   ├── core/                 # Core configuration
-│   │   ├── config.py        # Pydantic settings
-│   │   └── __init__.py
-│   ├── models/               # ML model training
-│   │   ├── weather_trainer.py  # Weather model
-│   │   ├── solar_trainer.py    # Solar model
-│   │   ├── model_store.py      # Model persistence
-│   │   └── __init__.py
-│   ├── schemas/              # Pydantic DTOs
-│   │   ├── prediction.py    # Response schemas
-│   │   └── __init__.py
-│   ├── services/             # Business logic
-│   │   ├── model_manager.py  # Model lifecycle
-│   │   ├── prediction.py     # Prediction logic
-│   │   └── __init__.py
-│   ├── utils/                # Shared utilities
-│   ├── main.py              # FastAPI app instance
-│   └── __init__.py
-├── doc/                      # Documentation
-├── models/                   # Trained model storage
-├── .env.example             # Example environment config
-├── requirements.txt         # Python dependencies
-├── run.py                   # Server entry point
-└── README.md               # This file
-```
+本系統可預測特定地點和日期的太陽能發電量（單位為 kWh）。它採用混合式數據管線，結合歷史天氣數據與滾動式機器學習預測，為太陽能預測模型提供準確的輸入。
 
-## 🚀 Quick Start
+**主要功能：**
+*   **混合式天氣管線 (Hybrid Weather Pipeline)**：在歷史數據（模擬 API 抓取）和未來的滾動預測之間無縫切換。
+*   **雙重預測策略 (Dual Prediction Strategies)**：
+    *   `merged`: A generalist model trained on all sites.
+    *   `seperated`: An ensemble of site-specific models (averaged).
+*   **動態訓練 (Dynamic Training)**：自動發現並訓練放置於資料夾中的新太陽能案場數據。
+*   **FastAPI & XGBoost**：提供梯度提升模型的高效能 API。
 
-### 1. Install Dependencies
+## 📚 文件
 
+詳細文件位於 `doc/` 目錄中：
+
+*   **安裝指南 (Setup Guide)**：安裝、配置及運行應用程式。
+*   **API 合約 (API Contract)**：詳細的端點規格（日、月、年）。
+*   **系統架構 (System Architecture)**：高層次設計、數據流與組件圖。
+*   **測試指南 (Testing Guide)**：如何運行完整的測試套件。
+*   **問題排解 (Troubleshooting)**：常見問題与解決方案。
+*   **技術棧 (Tech Stack)**：使用的函式庫與工具。
+
+### 組件深入探討
+*   模型管理器 (Model Manager)
+*   預測引擎 (Prediction Engine)
+*   天氣抓取器 (Weather Fetcher)
+
+## 🛠️ 快速入門
+
+### 1. 先決條件
+*   Python 3.9+
+*   `pip`
+
+### 2. 安裝
 ```bash
 cd repo
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+### 3. Running the App
+You can run the application in two modes (controlled by `STARTUP_MODE`):
 
+**Option A: Load Pre-trained Models (Fast)**
 ```bash
-cp .env.example .env
-# Edit .env with your settings
+# Default mode - loads models from ./models/
+uvicorn main:app --reload
 ```
 
-### 3. Run the Server
-
-#### Option A: Load Pre-trained Models
+**Option B: Train from Scratch**
 ```bash
-# Make sure STARTUP_MODE=load_models in .env
-python run.py
+# Retrains models using data in app/data/
+STARTUP_MODE=train_now uvicorn main:app --reload
 ```
 
-#### Option B: Train Models on Startup
-```bash
-# Set STARTUP_MODE=train_now in .env
-python run.py
+### 4. Explore the API
+Once running, open your browser to:
+*   **Swagger UI**: http://127.0.0.1:8000/docs
+*   **ReDoc**: http://127.0.0.1:8000/redoc
+
+## 📂 Repository Structure
+
+```
+repo/
+├── app/data/           # Solar training data (CSVs)
+├── doc/                # Documentation
+├── manual_testing/     # Scripts for manual verification
+├── models/             # Saved ML models (.pkl)
+├── main.py             # Application entry point
+├── requirements.txt    # Dependencies
+└── README.md           # This file
 ```
 
-#### Option C: Using Uvicorn Directly
-```bash
-uvicorn app.main:app --reload
-```
-
-### 4. Access the API
-
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Root**: http://localhost:8000/
-
-## 📡 API Endpoints
-
-### Prediction Endpoints
-
-#### Daily Predictions
-```
-GET /v1/predict/day
-```
-Query Parameters:
-- `lon`: Longitude (-180 to 180)
-- `lat`: Latitude (-90 to 90)
-- `startDate`: Start date (YYYY-MM-DD)
-- `endDate`: End date (YYYY-MM-DD)
-- `pmp`: Panel Maximum Power in Watts (default: 1000)
-
-Example:
-```bash
-curl "http://localhost:8000/v1/predict/day?lon=119.588339&lat=23.530236&startDate=2025-01-01&endDate=2025-01-31&pmp=1000"
-```
-
-#### Monthly Predictions
-```
-GET /v1/predict/month
-```
-Query Parameters:
-- `lon`: Longitude
-- `lat`: Latitude
-- `startDate`: Start month (YYYY-MM)
-- `endDate`: End month (YYYY-MM)
-- `pmp`: Panel Maximum Power (W)
-
-Example:
-```bash
-curl "http://localhost:8000/v1/predict/month?lon=119.588339&lat=23.530236&startDate=2025-01&endDate=2025-12&pmp=1000"
-```
-
-#### Yearly Predictions
-```
-GET /v1/predict/year
-```
-Query Parameters:
-- `lon`: Longitude
-- `lat`: Latitude
-- `year`: Year (2000-2100)
-- `pmp`: Panel Maximum Power (W)
-
-Example:
-```bash
-curl "http://localhost:8000/v1/predict/year?lon=119.588339&lat=23.530236&year=2025&pmp=1000"
-```
-
-## 🔧 Configuration
-
-All configuration is managed through environment variables (`.env` file):
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `STARTUP_MODE` | `train_now` or `load_models` | `load_models` |
-| `MODEL_DIR` | Model storage directory | `./models` |
-| `WEATHER_HIST_FILE` | Historical weather data | `../code/data/23.530236_119.588339.csv` |
-| `WEATHER_PRED_FILE` | Predicted weather data | `../code/data/weather-pred.csv` |
-| `WEATHER_WINDOW_SIZE` | Weather model window (days) | `30` |
-| `SOLAR_TEST_MONTHS` | Solar test period (months) | `6` |
-| `LOG_LEVEL` | Logging level | `INFO` |
-
-See `.env.example` for all available options.
-
-## 🧪 Model Training
-
-The application supports two startup modes:
-
-### Load Pre-trained Models
-```bash
-export STARTUP_MODE=load_models
-python run.py
-```
-Loads models from `MODEL_DIR`.
-
-### Train on Startup
-```bash
-export STARTUP_MODE=train_now
-python run.py
-```
-Trains both weather and solar models on startup. This matches the exact implementation from the reference XGBoost code:
-- **Weather Model**: 30-day window, multi-output XGBoost
-- **Solar Model**: Merged dataset with one-hot encoding
-
-## 🐳 Docker Support
-
-The app/ structure is designed for easy Docker containerization:
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY app/ app/
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-## 📚 Architecture
-
-This project follows **FastAPI best practices** with clear **Separation of Concerns**:
-
-- **`app/api/`**: HTTP layer (routing, validation)
-- **`app/services/`**: Business logic
-- **`app/models/`**: ML model training and management
-- **`app/schemas/`**: Data contracts (DTOs)
-- **`app/core/`**: Configuration management
-
-## 🔗 References
-
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [XGBoost Documentation](https://xgboost.readthedocs.io/)
-- See `doc/` directory for detailed component documentation
+For more details on testing, run `pytest` or check the Testing Guide.

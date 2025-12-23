@@ -29,6 +29,7 @@ This document describes the standardized API endpoints, input/output schemas, an
 | `startDate` | string | Yes | YYYY-MM-DD format | Start date of prediction range |
 | `endDate` | string | Yes | YYYY-MM-DD format | End date of prediction range (inclusive) |
 | `pmp` | float | No (default: 1000) | > 0 | Panel Maximum Power in Watts |
+| `strategy` | string | No (default: merged) | merged, seperated | Model strategy to use |
 
 **Success Response** (200 OK):
 ```json
@@ -65,7 +66,7 @@ This document describes the standardized API endpoints, input/output schemas, an
 
 **Example Request**:
 ```bash
-curl "http://localhost:8000/v1/predict/day?lon=119.588339&lat=23.530236&startDate=2025-01-01&endDate=2025-01-10&pmp=1000"
+curl "http://localhost:8000/v1/predict/day?lon=119.588339&lat=23.530236&startDate=2025-01-01&endDate=2025-01-10&pmp=1000&strategy=merged"
 ```
 
 ---

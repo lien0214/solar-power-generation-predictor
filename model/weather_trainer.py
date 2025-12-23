@@ -52,8 +52,19 @@ def shifted_sin_cos(doy: np.ndarray, offset: int, year_lengths: np.ndarray) -> t
     return np.sin(angles), np.cos(angles)
 
 
+def load_all_stations(data_dir: str) -> List[pd.DataFrame]:
+    """
+    Load all station CSV files from a directory.
+    """
+    files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.lower().endswith(".csv")]
+    if not files:
+        raise FileNotFoundError(f"No CSV files found in {data_dir}")
+    frames = [pd.read_csv(p) for p in sorted(files)]
+    return frames
+
+
 def train_weather_model(
-    csv_path: str,
+    data_dir: str,
     output_dir: str,
     targets: Optional[List[str]] = None,
     win: int = 30,
@@ -65,7 +76,7 @@ def train_weather_model(
     Train weather forecasting model - exact match to xgb-weather-forecaster.py.
     
     Args:
-        csv_path: Path to historical weather CSV
+        data_dir: Path to directory with historical weather CSVs
         output_dir: Directory to save trained model bundle
         targets: Weather variables to predict (default: all 8)
         win: Window size in days (default: 30)
@@ -92,8 +103,9 @@ def train_weather_model(
     logger.info(f"Mode: {mode}")
     
     # --- 1. Load Data ---
-    logger.info(f"Loading CSV: {csv_path}")
-    df = pd.read_csv(csv_path)
+    logger.info(f"Loading CSVs from: {data_dir}")
+    frames = load_all_stations(data_dir)
+    df = pd.concat(frames, ignore_index=True)
     
     # Build Date column if needed
     if "Date" not in df.columns:
@@ -278,7 +290,6 @@ def train_weather_model(
         "val_samples": len(X_val),
         "test_samples": len(X_test),
     }
-
 
 def load_weather_model(bundle_path: str) -> Dict[str, Any]:
     """

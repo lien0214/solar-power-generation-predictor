@@ -11,11 +11,11 @@
 - Key settings:
   - Startup mode: `train_now` or `load_models`
   - Redis connection (host, port)
-  - Data paths (for backup, models, etc.)
+  - Data paths: `WEATHER_HIST_FILE` (historical weather) and `SOLAR_DATA_DIR` (solar sites folder)
   - API server settings (host, port)
 
 ## Startup Modes
-- **Train Now**: Fetches grid weather data and trains models at startup.
+- **Train Now**: Scans `SOLAR_DATA_DIR` for CSV files, trains both merged and separated models, and saves them.
 - **Load Models**: Loads pre-trained models from disk for immediate use.
 
 ## Starting the Engine
@@ -37,7 +37,7 @@ redis:
   db: 0
 data_paths:
   weather_data: ./data/grid-weather
-  solar_data: ./data/solar
+  solar_data: app/data
   models: ./models
 api:
   host: 0.0.0.0

@@ -61,6 +61,11 @@ class Settings(BaseSettings):
     weather_model_mode: str = Field(default="multi", env="WEATHER_MODEL_MODE")
     solar_test_months: int = Field(default=6, env="SOLAR_TEST_MONTHS")
     solar_valid_months: int = Field(default=1, env="SOLAR_VALID_MONTHS")
+    solar_model_tactic: str = Field(
+        default="merged",
+        env="SOLAR_MODEL_TACTIC",
+        description="'merged' or 'seperated'"
+    )
     
     # Logging
     log_level: str = Field(default="INFO", env="LOG_LEVEL")

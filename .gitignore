@@ -163,3 +163,4 @@ tmp/
 # models/*.pt
 # models/*.pth
 # models/*.onnx
+*.csv

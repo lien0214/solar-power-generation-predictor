@@ -29,12 +29,13 @@ async def predict_day(
     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
     startDate: str = Query(..., description="Start date (YYYY-MM-DD)", alias="startDate"),
     endDate: str = Query(..., description="End date (YYYY-MM-DD)", alias="endDate"),
-    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)")
+    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)"),
+    tactic: str = Query("merged", description="Prediction model tactic: 'merged' or 'seperated'")
 ) -> DayPredictionResponse:
     """
     Predict solar generation for a date range.
     
-    Example: /predict/day?lon=119.588339&lat=23.530236&startDate=2025-01-01&endDate=2025-01-31&pmp=1000
+    Example: /predict/day?lon=119.588339&lat=23.530236&startDate=2025-01-01&endDate=2025-01-31&pmp=1000&tactic=merged
     """
     try:
         predictions = await prediction_service.predict_day_range(
@@ -42,7 +43,8 @@ async def predict_day(
             lat=lat,
             start_date=startDate,
             end_date=endDate,
-            pmp=pmp
+            pmp=pmp,
+            tactic=tactic
         )
         
         return DayPredictionResponse(
@@ -72,12 +74,13 @@ async def predict_month(
     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
     startDate: str = Query(..., description="Start month (YYYY-MM)", alias="startDate"),
     endDate: str = Query(..., description="End month (YYYY-MM)", alias="endDate"),
-    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)")
+    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)"),
+    tactic: str = Query("merged", description="Prediction model tactic: 'merged' or 'seperated'")
 ) -> MonthPredictionResponse:
     """
     Predict solar generation for a month range.
     
-    Example: /predict/month?lon=119.588339&lat=23.530236&startDate=2025-01&endDate=2025-12&pmp=1000
+    Example: /predict/month?lon=119.588339&lat=23.530236&startDate=2025-01&endDate=2025-12&pmp=1000&tactic=merged
     """
     try:
         predictions = await prediction_service.predict_month_range(
@@ -85,7 +88,8 @@ async def predict_month(
             lat=lat,
             start_date=startDate,
             end_date=endDate,
-            pmp=pmp
+            pmp=pmp,
+            tactic=tactic
         )
         
         return MonthPredictionResponse(
@@ -114,19 +118,21 @@ async def predict_year(
     lon: float = Query(..., ge=-180, le=180, description="Longitude"),
     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
     year: int = Query(..., ge=2000, le=2100, description="Year"),
-    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)")
+    pmp: Optional[float] = Query(1000, gt=0, description="Panel Maximum Power (W)"),
+    tactic: str = Query("merged", description="Prediction model tactic: 'merged' or 'seperated'")
 ) -> YearPredictionResponse:
     """
     Predict total solar generation for a year.
     
-    Example: /predict/year?lon=119.588339&lat=23.530236&year=2025&pmp=1000
+    Example: /predict/year?lon=119.588339&lat=23.530236&year=2025&pmp=1000&tactic=merged
     """
     try:
         total_kwh = await prediction_service.predict_year(
             lon=lon,
             lat=lat,
             year=year,
-            pmp=pmp
+            pmp=pmp,
+            tactic=tactic
         )
         
         return YearPredictionResponse(
