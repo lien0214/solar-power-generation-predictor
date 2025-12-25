@@ -15,7 +15,7 @@ import os
 repo_path = Path(__file__).parent.parent
 sys.path.insert(0, str(repo_path))
 
-from app.data_fetcher import fetch_grid_weather
+from app.utils import fetch_grid_weather
 
 def test_fetch_grid_weather():
     """
