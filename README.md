@@ -60,37 +60,47 @@ cd repo
 pip install -r requirements.txt
 ```
 
-### 3. Running the App
-You can run the application in two modes (controlled by `STARTUP_MODE`):
+### 4. 環境變數設定
 
-**Option A: Load Pre-trained Models (Fast)**
+此專案使用環境變數進行配置。您可以從 `.env.example` 檔案中複製範本並進行修改。
+
 ```bash
-# Default mode - loads models from ./models/
+cp .env.example .env
+```
+
+開啟 `.env` 檔案並根據您的需求調整變數。特別注意 `STARTUP_MODE` 變數，它控制應用程式啟動時是訓練模型 (`train_now`) 還是加載預訓練模型 (`load_models`)。
+
+### 5. 運行應用程式
+您可以透過兩種模式運行應用程式（由 `STARTUP_MODE` 控制）：
+
+#### 選項 A: 加載預訓練模型 (快速)
+```bash
+# 預設模式 - 從 ./models/ 加載模型
 uvicorn main:app --reload
 ```
 
-**Option B: Train from Scratch**
+#### 選項 B: 從頭開始訓練
 ```bash
-# Retrains models using data in app/data/
+# 使用 app/data/ 中的數據重新訓練模型
 STARTUP_MODE=train_now uvicorn main:app --reload
 ```
 
-### 4. Explore the API
-Once running, open your browser to:
+### 6. 探索 API
+應用程式運行後，請在瀏覽器中打開：
 *   **Swagger UI**: http://127.0.0.1:8000/docs
 *   **ReDoc**: http://127.0.0.1:8000/redoc
 
-## 📂 Repository Structure
+## 📂 儲存庫結構
 
 ```
 repo/
-├── app/data/           # Solar training data (CSVs)
-├── doc/                # Documentation
-├── manual_testing/     # Scripts for manual verification
-├── models/             # Saved ML models (.pkl)
-├── main.py             # Application entry point
-├── requirements.txt    # Dependencies
-└── README.md           # This file
+├── app/data/           # 太陽能訓練數據 (CSVs)
+├── doc/                # 文件
+├── manual_testing/     # 手動驗證腳本
+├── models/             # 已保存的機器學習模型 (.pkl)
+├── main.py             # 應用程式入口點
+├── requirements.txt    # 依賴項
+└── README.md           # 此檔案
 ```
 
-For more details on testing, run `pytest` or check the Testing Guide.
+有關測試的更多詳細資訊，請運行 `pytest` 或查閱 測試指南。
