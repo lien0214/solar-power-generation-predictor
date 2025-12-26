@@ -36,7 +36,25 @@
 *   Python 3.9+
 *   `pip`
 
-### 2. 安裝
+### 2. 建立和激活虛擬環境
+
+建議為專案建立一個虛擬環境，以管理依賴項並避免與其他專案發生衝突。
+
+```bash
+# 建立虛擬環境
+python3 -m venv .venv
+
+# 激活虛擬環境 (macOS/Linux)
+source .venv/bin/activate
+
+# 激活虛擬環境 (Windows PowerShell)
+# .\.venv\Scripts\Activate.ps1
+
+# 激活虛擬環境 (Windows Command Prompt)
+# .venv\Scripts\activate.bat
+```
+
+### 3. 安裝依賴項
 ```bash
 cd repo
 pip install -r requirements.txt
