@@ -571,144 +571,144 @@ async def predict_day(
         raise HTTPException(status_code=400, detail=f"Invalid date format. Use YYYY-MM-DD: {str(e)}")
 
 
-@app.get(
-    "/predict/month",
-    response_model=MonthPredictionResponse,
-    summary="Predict solar generation for a month range",
-    description="Predict solar generation for a specific month range at a given location"
-)
-async def predict_month(
-    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
-    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
-    startDate: str = Query(..., description="Start month (YYYY-MM)", alias="startDate"),
-    endDate: str = Query(..., description="End month (YYYY-MM)", alias="endDate"),
-    pmp: Optional[float] = Query(1000, description="Panel Maximum Power (W)"),
-    strategy: str = Query("merged", enum=["merged", "seperated"], description="Model strategy to use")
-) -> MonthPredictionResponse:
-    """
-    Predict solar generation for a specific month range at a given location.
+# @app.get(
+#     "/predict/month",
+#     response_model=MonthPredictionResponse,
+#     summary="Predict solar generation for a month range",
+#     description="Predict solar generation for a specific month range at a given location"
+# )
+# async def predict_month(
+#     lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+#     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+#     startDate: str = Query(..., description="Start month (YYYY-MM)", alias="startDate"),
+#     endDate: str = Query(..., description="End month (YYYY-MM)", alias="endDate"),
+#     pmp: Optional[float] = Query(1000, description="Panel Maximum Power (W)"),
+#     strategy: str = Query("merged", enum=["merged", "seperated"], description="Model strategy to use")
+# ) -> MonthPredictionResponse:
+#     """
+#     Predict solar generation for a specific month range at a given location.
     
-    Example: /predict/month?lon=119.588339&lat=23.530236&startDate=2025-01&endDate=2025-05&pmp=1000
-    """
-    logger.info(f"Processing /predict/month for lat={lat}, lon={lon}, range={startDate}-{endDate}, strategy='{strategy}'")
-    try:
-        # Validate date format
-        start = datetime.strptime(startDate, "%Y-%m")
-        end = datetime.strptime(endDate, "%Y-%m")
+#     Example: /predict/month?lon=119.588339&lat=23.530236&startDate=2025-01&endDate=2025-05&pmp=1000
+#     """
+#     logger.info(f"Processing /predict/month for lat={lat}, lon={lon}, range={startDate}-{endDate}, strategy='{strategy}'")
+#     try:
+#         # Validate date format
+#         start = datetime.strptime(startDate, "%Y-%m")
+#         end = datetime.strptime(endDate, "%Y-%m")
         
-        if end < start:
-            raise HTTPException(status_code=400, detail="endDate must be after or equal to startDate")
+#         if end < start:
+#             raise HTTPException(status_code=400, detail="endDate must be after or equal to startDate")
         
-        selected_model = solar_models.get(strategy)
-        if selected_model is None:
-            raise HTTPException(status_code=503, detail=f"Solar model for strategy '{strategy}' is not loaded.")
+#         selected_model = solar_models.get(strategy)
+#         if selected_model is None:
+#             raise HTTPException(status_code=503, detail=f"Solar model for strategy '{strategy}' is not loaded.")
 
-        # Create daily range for the months to get accurate aggregation
-        next_month = end.replace(day=28) + timedelta(days=4)
-        last_day_of_end_month = next_month - timedelta(days=next_month.day)
+#         # Create daily range for the months to get accurate aggregation
+#         next_month = end.replace(day=28) + timedelta(days=4)
+#         last_day_of_end_month = next_month - timedelta(days=next_month.day)
         
-        date_range = pd.date_range(start=start, end=last_day_of_end_month)
-        input_df = pd.DataFrame({'Date': date_range, 'lat': lat, 'lon': lon, 'PMP': pmp})
+#         date_range = pd.date_range(start=start, end=last_day_of_end_month)
+#         input_df = pd.DataFrame({'Date': date_range, 'lat': lat, 'lon': lon, 'PMP': pmp})
         
-        # Feature Engineering
-        input_df['year'] = input_df['Date'].dt.year
-        input_df['month'] = input_df['Date'].dt.month
-        input_df['day'] = input_df['Date'].dt.day
+#         # Feature Engineering
+#         input_df['year'] = input_df['Date'].dt.year
+#         input_df['month'] = input_df['Date'].dt.month
+#         input_df['day'] = input_df['Date'].dt.day
         
-        # 2. Predict Weather
-        input_df = await _predict_weather_features(input_df)
+#         # 2. Predict Weather
+#         input_df = await _predict_weather_features(input_df)
 
-        # Add one-hot encoding for merged model strategy
-        if strategy == "merged" and isinstance(selected_model, dict) and "datasets" in selected_model:
-            datasets = selected_model.get('datasets', [])
-            if datasets:
-                first_dataset = datasets[0]
-                for ds in datasets:
-                    input_df[f"ds_{ds}"] = 1 if ds == first_dataset else 0
+#         # Add one-hot encoding for merged model strategy
+#         if strategy == "merged" and isinstance(selected_model, dict) and "datasets" in selected_model:
+#             datasets = selected_model.get('datasets', [])
+#             if datasets:
+#                 first_dataset = datasets[0]
+#                 for ds in datasets:
+#                     input_df[f"ds_{ds}"] = 1 if ds == first_dataset else 0
 
-        try:
-            daily_kwh = _predict_solar_power(input_df, selected_model, strategy)
-            input_df['kwh'] = daily_kwh
-        except Exception as e:
-             logger.error(f"Solar power prediction failed: {e}", exc_info=True)
-             raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
+#         try:
+#             daily_kwh = _predict_solar_power(input_df, selected_model, strategy)
+#             input_df['kwh'] = daily_kwh
+#         except Exception as e:
+#              logger.error(f"Solar power prediction failed: {e}", exc_info=True)
+#              raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
 
-        # Aggregate by month
-        input_df['Month'] = input_df['Date'].dt.to_period('M')
-        monthly_data = input_df.groupby('Month')['kwh'].sum().reset_index()
+#         # Aggregate by month
+#         input_df['Month'] = input_df['Date'].dt.to_period('M')
+#         monthly_data = input_df.groupby('Month')['kwh'].sum().reset_index()
 
-        predictions = []
-        for _, row in monthly_data.iterrows():
-            predictions.append(MonthPrediction(date=str(row['Month']), kwh=round(row['kwh'], 2)))
+#         predictions = []
+#         for _, row in monthly_data.iterrows():
+#             predictions.append(MonthPrediction(date=str(row['Month']), kwh=round(row['kwh'], 2)))
         
-        return MonthPredictionResponse(
-            location=Location(lat=lat, lon=lon),
-            month=start.month,
-            year=start.year,
-            pmp=pmp,
-            predictions=predictions
-        )
+#         return MonthPredictionResponse(
+#             location=Location(lat=lat, lon=lon),
+#             month=start.month,
+#             year=start.year,
+#             pmp=pmp,
+#             predictions=predictions
+#         )
     
-    except ValueError as e:
-        logger.error(f"Date validation error for /predict/month: {e}", exc_info=True)
-        raise HTTPException(status_code=400, detail=f"Invalid date format. Use YYYY-MM: {str(e)}")
+#     except ValueError as e:
+#         logger.error(f"Date validation error for /predict/month: {e}", exc_info=True)
+#         raise HTTPException(status_code=400, detail=f"Invalid date format. Use YYYY-MM: {str(e)}")
 
 
-@app.get(
-    "/predict/year",
-    response_model=YearPredictionResponse,
-    summary="Predict solar generation for a year",
-    description="Predict solar generation for a specific year at a given location"
-)
-async def predict_year(
-    lon: float = Query(..., ge=-180, le=180, description="Longitude"),
-    lat: float = Query(..., ge=-90, le=90, description="Latitude"),
-    year: int = Query(..., ge=2000, le=2100, description="Year (YYYY)"),
-    pmp: Optional[float] = Query(1000, description="Panel Maximum Power (W)"),
-    strategy: str = Query("merged", enum=["merged", "seperated"], description="Model strategy to use")
-) -> YearPredictionResponse:
-    """
-    Predict solar generation for a specific year at a given location.
+# @app.get(
+#     "/predict/year",
+#     response_model=YearPredictionResponse,
+#     summary="Predict solar generation for a year",
+#     description="Predict solar generation for a specific year at a given location"
+# )
+# async def predict_year(
+#     lon: float = Query(..., ge=-180, le=180, description="Longitude"),
+#     lat: float = Query(..., ge=-90, le=90, description="Latitude"),
+#     year: int = Query(..., ge=2000, le=2100, description="Year (YYYY)"),
+#     pmp: Optional[float] = Query(1000, description="Panel Maximum Power (W)"),
+#     strategy: str = Query("merged", enum=["merged", "seperated"], description="Model strategy to use")
+# ) -> YearPredictionResponse:
+#     """
+#     Predict solar generation for a specific year at a given location.
     
-    Example: /predict/year?lon=119.588339&lat=23.530236&year=2025&pmp=1000
-    """
-    logger.info(f"Processing /predict/year for lat={lat}, lon={lon}, year={year}, strategy='{strategy}'")
-    selected_model = solar_models.get(strategy)
-    if selected_model is None:
-        raise HTTPException(status_code=503, detail=f"Solar model for strategy '{strategy}' is not loaded.")
+#     Example: /predict/year?lon=119.588339&lat=23.530236&year=2025&pmp=1000
+#     """
+#     logger.info(f"Processing /predict/year for lat={lat}, lon={lon}, year={year}, strategy='{strategy}'")
+#     selected_model = solar_models.get(strategy)
+#     if selected_model is None:
+#         raise HTTPException(status_code=503, detail=f"Solar model for strategy '{strategy}' is not loaded.")
 
-    start_date = datetime(year, 1, 1)
-    end_date = datetime(year, 12, 31)
+#     start_date = datetime(year, 1, 1)
+#     end_date = datetime(year, 12, 31)
     
-    date_range = pd.date_range(start=start_date, end=end_date)
-    input_df = pd.DataFrame({'Date': date_range, 'lat': lat, 'lon': lon, 'PMP': pmp})
+#     date_range = pd.date_range(start=start_date, end=end_date)
+#     input_df = pd.DataFrame({'Date': date_range, 'lat': lat, 'lon': lon, 'PMP': pmp})
 
-    # Feature Engineering
-    input_df['year'] = input_df['Date'].dt.year
-    input_df['month'] = input_df['Date'].dt.month
-    input_df['day'] = input_df['Date'].dt.day
+#     # Feature Engineering
+#     input_df['year'] = input_df['Date'].dt.year
+#     input_df['month'] = input_df['Date'].dt.month
+#     input_df['day'] = input_df['Date'].dt.day
     
-    # 2. Predict Weather
-    input_df = await _predict_weather_features(input_df)
+#     # 2. Predict Weather
+#     input_df = await _predict_weather_features(input_df)
 
-    # Add one-hot encoding for merged model strategy
-    if strategy == "merged" and isinstance(selected_model, dict) and "datasets" in selected_model:
-        datasets = selected_model.get('datasets', [])
-        if datasets:
-            first_dataset = datasets[0]
-            for ds in datasets:
-                input_df[f"ds_{ds}"] = 1 if ds == first_dataset else 0
+#     # Add one-hot encoding for merged model strategy
+#     if strategy == "merged" and isinstance(selected_model, dict) and "datasets" in selected_model:
+#         datasets = selected_model.get('datasets', [])
+#         if datasets:
+#             first_dataset = datasets[0]
+#             for ds in datasets:
+#                 input_df[f"ds_{ds}"] = 1 if ds == first_dataset else 0
 
-    try:
-        daily_kwh = _predict_solar_power(input_df, selected_model, strategy)
-        total_kwh = round(float(daily_kwh.sum()), 2)
-    except Exception as e:
-        logger.error(f"Solar power prediction failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
+#     try:
+#         daily_kwh = _predict_solar_power(input_df, selected_model, strategy)
+#         total_kwh = round(float(daily_kwh.sum()), 2)
+#     except Exception as e:
+#         logger.error(f"Solar power prediction failed: {e}", exc_info=True)
+#         raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
     
-    return YearPredictionResponse(
-        location=Location(lat=lat, lon=lon),
-        year=year,
-        pmp=pmp,
-        kwh=total_kwh
-    )
+#     return YearPredictionResponse(
+#         location=Location(lat=lat, lon=lon),
+#         year=year,
+#         pmp=pmp,
+#         kwh=total_kwh
+#     )
